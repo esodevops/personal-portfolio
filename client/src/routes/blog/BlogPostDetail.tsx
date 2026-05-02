@@ -24,7 +24,7 @@ const BlogPostsDetails: React.FC = () => {
           throw new Error('Blog documentId is missing');
         }
         const data = await fetchBlogById(locale, documentId);
-        setBlog(data.data);
+        setBlog(data);
       } catch (err) {
         console.error('Error fetching blog:', err);
         setError('Failed to fetch blog');
@@ -84,7 +84,7 @@ const BlogPostsDetails: React.FC = () => {
                 code: ({ ...props }) => <code {...props} className="bg-gray-700 rounded px-2 py-1 text-sm" />,
               }}
             >
-              {blog.content}
+              {blog.content ?? ''}
             </ReactMarkdown>
           </div>
 

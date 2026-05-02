@@ -5,6 +5,7 @@ import { ContactData } from '../types/Contact';
 import ReCAPTCHA from 'react-google-recaptcha';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState<ContactData>({
@@ -15,6 +16,7 @@ const Contact: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaValue, setCaptchaValue] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
 
   // Add a ref for the ReCAPTCHA component
   const recaptchaRef = useRef<ReCAPTCHA | null>(null);
@@ -28,10 +30,40 @@ const Contact: React.FC = () => {
   };
   const handleCaptchaChange = (value: string | null) => {
     setCaptchaValue(value);
+    if (value) {
+      setCaptchaError(null);
+    }
+  };
+
+  const handleCaptchaExpired = () => {
+    setCaptchaValue(null);
+    setCaptchaError('Captcha expired. Please verify again.');
+  };
+
+  const handleCaptchaError = () => {
+    setCaptchaValue(null);
+    setCaptchaError('Captcha failed to load. Please refresh and try again.');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!RECAPTCHA_SITE_KEY) {
+      Swal.fire({
+        title: 'Configuration Error',
+        text: 'reCAPTCHA site key is missing. Please set VITE_RECAPTCHA_SITE_KEY.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#3b82f6',
+      });
+      return;
+    }
+
+    if (!captchaValue) {
+      setCaptchaError('Please complete the captcha before submitting.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -41,6 +73,7 @@ const Contact: React.FC = () => {
           email: formData.email,
           subject: formData.subject,
           message: formData.message,
+          recaptchaToken: captchaValue,
         },
       };
 
@@ -60,6 +93,7 @@ const Contact: React.FC = () => {
         });
         // Clear the captcha after successful submission
         setCaptchaValue(null);
+        setCaptchaError(null);
         if (recaptchaRef.current) {
           recaptchaRef.current.reset();
         }
@@ -162,15 +196,17 @@ const Contact: React.FC = () => {
           </div>
           <ReCAPTCHA
             ref={recaptchaRef}
-            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+            sitekey={RECAPTCHA_SITE_KEY}
             onChange={handleCaptchaChange}
+            onExpired={handleCaptchaExpired}
+            onErrored={handleCaptchaError}
             className="my-4"
           />
-          <div className="text-green-500 text-sm">{captchaValue ? '' : ''}</div>
+          {captchaError && <div className="text-red-400 text-sm">{captchaError}</div>}
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !RECAPTCHA_SITE_KEY}
             className={`w-full py-3 px-6 rounded-md text-white font-medium ${
               isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
             } transition-colors`}
