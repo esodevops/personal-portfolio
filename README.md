@@ -71,6 +71,24 @@ The current codebase passes:
 - `npm run build`
 - `npm run lint`
 
+## Cloudflare Pages Deployment
+
+This repo is a monorepo-style layout where the frontend app lives in `client/`.
+
+Use these Cloudflare Pages settings:
+
+- Framework preset: `Vite`
+- Root directory: `client`
+- Build command: `npm run build`
+- Build output directory: `dist`
+
+For SPA routing (React Router), the fallback file must be published in build output.
+This project includes `client/public/_redirects`:
+
+```txt
+/* /index.html 200
+```
+
 ## Author
 
 Sulaimon Ekundayo
